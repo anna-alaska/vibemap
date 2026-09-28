@@ -87,6 +87,7 @@ function App(){
   const [selected,setSelected]=useState(null)
   const [count,setCount]=useState(128)
   const [status,setStatus]=useState('Определяем район…')
+  const userLocation=useRef(null)
   const [features,setFeatures]=useState(MOCK)
 
   const dominant=useMemo(()=>{
@@ -127,6 +128,7 @@ function App(){
       if(navigator.geolocation){
         navigator.geolocation.getCurrentPosition(pos=>{
           const {longitude,latitude}=pos.coords
+          userLocation.current=[longitude,latitude]
           setStatus('Твоя точка найдена')
           map.easeTo({center:[longitude,latitude],zoom:15,duration:900})
           new maplibregl.Marker({color:'#ffffff',scale:.65}).setLngLat([longitude,latitude]).addTo(map)
@@ -156,6 +158,7 @@ function App(){
     <section className="topbar"><div><p className="eyebrow">Прямо сейчас</p><h1>Город сегодня на <span>{dominant.label.toLowerCase()}</span></h1><p className="sub">{status} · {count} отметок за 2 часа</p></div></section>
     <section className="map-shell">
       <div ref={mapEl} className="map"/>
+      <button className="locate" onClick={()=>{const p=userLocation.current;if(p) mapRef.current?.easeTo({center:p,zoom:15,duration:700});else navigator.geolocation?.getCurrentPosition(pos=>{const p=[pos.coords.longitude,pos.coords.latitude];userLocation.current=p;mapRef.current?.easeTo({center:p,zoom:15,duration:700})})}} aria-label="Найти меня">◎</button>
       {!sheetOpen&&<button className="reopen" onClick={()=>setSheetOpen(true)}>✦ Отметить свой вайб</button>}
       <section className={'sheet '+(sheetOpen?'open':'closed')} aria-hidden={!sheetOpen}>
         <button className="handle" onClick={()=>setSheetOpen(false)} aria-label="Свернуть панель"><span/></button>

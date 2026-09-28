@@ -13,18 +13,58 @@ const VIBES = [
   { id: 'alone', label: 'Не трогайте', icon: '⚫', color: '#696973' },
 ]
 
-const DARK_OSM_STYLE = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors',
-      maxzoom: 19,
-    },
-  },
-  layers: [{ id: 'osm', type: 'raster', source: 'osm', paint: { 'raster-opacity': 1 } }],
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
+
+function makeMapVibey(map) {
+  for (const layer of map.getStyle().layers || []) {
+    const id = layer.id.toLowerCase()
+
+    // Strip technical/navigation clutter, but keep useful place/POI names.
+    if (
+      id.includes('housenumber') ||
+      id.includes('house-number') ||
+      id.includes('parking') ||
+      id.includes('transit') ||
+      id.includes('railway-label') ||
+      id.includes('airport-label') ||
+      id.includes('road-label') ||
+      id.includes('highway-label') ||
+      id.includes('motorway-label')
+    ) {
+      map.setLayoutProperty(layer.id, 'visibility', 'none')
+      continue
+    }
+
+    if (layer.type === 'background') {
+      map.setPaintProperty(layer.id, 'background-color', '#09090b')
+    }
+
+    if (layer.type === 'fill') {
+      if (id.includes('water')) map.setPaintProperty(layer.id, 'fill-color', '#15171b')
+      else if (id.includes('building')) map.setPaintProperty(layer.id, 'fill-color', '#202126')
+      else if (id.includes('park') || id.includes('landcover') || id.includes('landuse') || id.includes('wood')) {
+        map.setPaintProperty(layer.id, 'fill-color', '#111216')
+      }
+    }
+
+    if (layer.type === 'line') {
+      if (id.includes('water')) map.setPaintProperty(layer.id, 'line-color', '#262930')
+      else if (id.includes('road') || id.includes('street') || id.includes('motorway') || id.includes('highway')) {
+        map.setPaintProperty(layer.id, 'line-color', id.includes('major') || id.includes('motorway') ? '#a5a7ad' : '#555860')
+      } else if (id.includes('rail')) {
+        map.setPaintProperty(layer.id, 'line-color', '#35373d')
+      }
+    }
+
+    if (layer.type === 'symbol') {
+      if (map.getPaintProperty(layer.id, 'text-color') !== undefined) {
+        map.setPaintProperty(layer.id, 'text-color', '#b9bbc2')
+      }
+      if (map.getPaintProperty(layer.id, 'text-halo-color') !== undefined) {
+        map.setPaintProperty(layer.id, 'text-halo-color', '#09090b')
+      }
+    }
+  }
 }
 
 const MOCK = [
@@ -56,7 +96,7 @@ function App(){
   useEffect(()=>{
     const map=new maplibregl.Map({
       container:mapEl.current,
-      style:DARK_OSM_STYLE,
+      style:MAP_STYLE,
       center:[40.515,64.54],
       zoom:13.6,
       minZoom:10,
@@ -67,6 +107,7 @@ function App(){
     map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right')
 
     map.on('load',()=>{
+      makeMapVibey(map)
       map.addSource('vibes',{type:'geojson',data:featureCollection(features)})
       VIBES.forEach(v=>map.addLayer({
         id:'heat-'+v.id,type:'heatmap',source:'vibes',

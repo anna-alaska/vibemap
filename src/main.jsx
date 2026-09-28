@@ -73,10 +73,10 @@ function App(){
         filter:['==',['get','vibe'],v.id],
         paint:{
           'heatmap-weight':1,
-          'heatmap-intensity':['interpolate',['linear'],['zoom'],10,.75,16,1.8],
-          'heatmap-radius':['interpolate',['linear'],['zoom'],10,28,16,52],
-          'heatmap-opacity':['interpolate',['linear'],['zoom'],10,.78,17,.48],
-          'heatmap-color':['interpolate',['linear'],['heatmap-density'],0,'rgba(0,0,0,0)',.2,v.color+'18',.45,v.color+'55',.72,v.color+'aa',1,v.color]
+          'heatmap-intensity':['interpolate',['linear'],['zoom'],10,1.35,16,2.8],
+          'heatmap-radius':['interpolate',['linear'],['zoom'],10,36,16,68],
+          'heatmap-opacity':['interpolate',['linear'],['zoom'],10,.96,17,.78],
+          'heatmap-color':['interpolate',['linear'],['heatmap-density'],0,'rgba(0,0,0,0)',.12,v.color+'22',.32,v.color+'77',.58,v.color+'cc',.82,v.color,1,v.color]
         }
       }))
 

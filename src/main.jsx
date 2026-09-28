@@ -80,6 +80,17 @@ const MOCK = [
 
 const featureCollection = features => ({ type:'FeatureCollection', features })
 
+// Snap a private location to an approximately 300 m public grid cell.
+// The exact browser coordinates stay only in userLocation and are never added to the heatmap.
+function snapToGrid([lng, lat], cellMeters = 300) {
+  const latStep = cellMeters / 111320
+  const lngStep = cellMeters / (111320 * Math.cos(lat * Math.PI / 180))
+  return [
+    Math.round(lng / lngStep) * lngStep,
+    Math.round(lat / latStep) * latStep,
+  ]
+}
+
 function App(){
   const mapEl=useRef(null)
   const mapRef=useRef(null)
@@ -146,11 +157,31 @@ function App(){
   },[features])
 
   const chooseVibe=vibe=>{
-    setSelected(vibe.id);setCount(c=>c+1)
-    const map=mapRef.current
-    const center=map?.getCenter()||{lng:40.515,lat:64.54}
-    const jitter=()=>(Math.random()-.5)*.004
-    setFeatures(prev=>[...prev,{type:'Feature',properties:{vibe:vibe.id,weight:1},geometry:{type:'Point',coordinates:[center.lng+jitter(),center.lat+jitter()]}}])
+    if (!userLocation.current) {
+      setStatus('Нужна геопозиция, чтобы отметить вайб')
+      navigator.geolocation?.getCurrentPosition(pos=>{
+        const exact=[pos.coords.longitude,pos.coords.latitude]
+        userLocation.current=exact
+        setStatus('Твоя точка найдена')
+        addVibeToGrid(vibe, exact)
+      },()=>setStatus('Не удалось получить геопозицию'),{enableHighAccuracy:true,timeout:7000})
+      return
+    }
+    addVibeToGrid(vibe, userLocation.current)
+  }
+
+  const addVibeToGrid=(vibe, exactLocation)=>{
+    setSelected(vibe.id)
+    setCount(c=>c+1)
+    const publicCell=snapToGrid(exactLocation,300)
+    setFeatures(prev=>[
+      ...prev,
+      {
+        type:'Feature',
+        properties:{vibe:vibe.id,weight:1},
+        geometry:{type:'Point',coordinates:publicCell}
+      }
+    ])
     setTimeout(()=>setSheetOpen(false),260)
   }
 

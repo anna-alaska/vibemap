@@ -29,7 +29,10 @@ function makeMapVibey(map) {
       id.includes('airport-label') ||
       id.includes('road-label') ||
       id.includes('highway-label') ||
-      id.includes('motorway-label')
+      id.includes('motorway-label') ||
+      id.includes('poi') ||
+      id.includes('icon') ||
+      id.includes('symbol')
     ) {
       map.setLayoutProperty(layer.id, 'visibility', 'none')
       continue

@@ -91,15 +91,33 @@ function snapToGrid([lng, lat], cellMeters = 300) {
   ]
 }
 
+const ACTIVE_VIBE_KEY='vibemap-active-vibe'
+const VIBE_TTL_MS=2*60*60*1000
+
+function loadActiveVibe(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(ACTIVE_VIBE_KEY)||'null')
+    if(!saved || Date.now()-saved.updatedAt>VIBE_TTL_MS){
+      localStorage.removeItem(ACTIVE_VIBE_KEY)
+      return null
+    }
+    return saved
+  }catch{return null}
+}
+
 function App(){
   const mapEl=useRef(null)
   const mapRef=useRef(null)
   const [sheetOpen,setSheetOpen]=useState(true)
-  const [selected,setSelected]=useState(null)
+  const [activeVibe,setActiveVibe]=useState(()=>loadActiveVibe())
+  const [selected,setSelected]=useState(()=>loadActiveVibe()?.vibe||null)
   const [count,setCount]=useState(128)
   const [status,setStatus]=useState('Определяем район…')
   const userLocation=useRef(null)
-  const [features,setFeatures]=useState(MOCK)
+  const [features,setFeatures]=useState(()=>{
+    const saved=loadActiveVibe()
+    return saved?[...MOCK,{type:'Feature',properties:{vibe:saved.vibe,weight:1,mine:true},geometry:{type:'Point',coordinates:saved.cell}}]:MOCK
+  })
 
   const dominant=useMemo(()=>{
     const counts={}
@@ -171,17 +189,24 @@ function App(){
   }
 
   const addVibeToGrid=(vibe, exactLocation)=>{
-    setSelected(vibe.id)
-    setCount(c=>c+1)
     const publicCell=snapToGrid(exactLocation,300)
+    const previous=activeVibe
+    const next={vibe:vibe.id,cell:publicCell,updatedAt:Date.now()}
+    localStorage.setItem(ACTIVE_VIBE_KEY,JSON.stringify(next))
+    setActiveVibe(next)
+    setSelected(vibe.id)
+
+    // One browser = one active vote. Changing mood replaces the previous vote.
     setFeatures(prev=>[
-      ...prev,
+      ...prev.filter(feature=>!feature.properties?.mine),
       {
         type:'Feature',
-        properties:{vibe:vibe.id,weight:1},
+        properties:{vibe:vibe.id,weight:1,mine:true},
         geometry:{type:'Point',coordinates:publicCell}
       }
     ])
+    if(!previous) setCount(c=>c+1)
+    setStatus(previous?.vibe===vibe.id?'Вайб обновлён':'Твой актуальный вайб отмечен')
     setTimeout(()=>setSheetOpen(false),260)
   }
 
@@ -194,9 +219,9 @@ function App(){
       <section className={'sheet '+(sheetOpen?'open':'closed')} aria-hidden={!sheetOpen}>
         <button className="handle" onClick={()=>setSheetOpen(false)} aria-label="Свернуть панель"><span/></button>
         <div className="sheet-content">
-          <div className="sheet-head"><h2>Какой у тебя сейчас вайб?</h2><p>Один тап — и он уже на карте.</p></div>
+          <div className="sheet-head"><h2>Какой у тебя сейчас вайб?</h2><p>Один человек — один актуальный вайб. Можно менять настроение.</p></div>
           <div className="vibes">{VIBES.map(v=><button key={v.id} className={'vibe '+(selected===v.id?'active':'')} onClick={()=>chooseVibe(v)}><span className="icon">{v.icon}</span><span>{v.label}</span></button>)}</div>
-          <p className="privacy">Точная геопозиция другим людям не показывается.</p>
+          <p className="privacy">Вайб живёт 2 часа. Новая отметка заменяет предыдущую, точная геопозиция не публикуется.</p>
         </div>
       </section>
     </section>

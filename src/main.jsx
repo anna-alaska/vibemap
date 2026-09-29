@@ -224,14 +224,25 @@ function App(){
     setSelected(vibe.id)
 
     // One browser = one active vote. Changing mood replaces the previous vote.
+    // Optimistic local replacement; the server remains the source of truth.
     setFeatures(prev=>[
-      ...prev.filter(feature=>!feature.properties?.mine),
+      ...prev.filter(feature=>feature.properties?.deviceLocal!==true),
       {
         type:'Feature',
-        properties:{vibe:vibe.id,weight:1,mine:true},
+        properties:{vibe:vibe.id,weight:1,deviceLocal:true},
         geometry:{type:'Point',coordinates:publicPoint}
       }
     ])
+    setTimeout(()=>{
+      fetch(API_URL+'/api/vibes').then(r=>r.json()).then(data=>{
+        const remote=(data.cells||[]).map((x,i)=>({
+          type:'Feature',id:'remote-'+i,properties:{vibe:x.vibe,weight:x.weight},
+          geometry:{type:'Point',coordinates:[Number(x.lng),Number(x.lat)]}
+        }))
+        setFeatures(remote)
+        setCount(data.total||0)
+      }).catch(()=>{})
+    },250)
     if(!previous) setCount(c=>c+1)
     setStatus(previous?.vibe===vibe.id?'Вайб обновлён':'Твой актуальный вайб отмечен')
     setTimeout(()=>setSheetOpen(false),260)

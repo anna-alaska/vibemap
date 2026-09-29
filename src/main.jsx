@@ -135,10 +135,7 @@ function App(){
   const [count,setCount]=useState(128)
   const [status,setStatus]=useState('Определяем район…')
   const userLocation=useRef(null)
-  const [features,setFeatures]=useState(()=>{
-    const saved=loadActiveVibe()
-    return saved?[...MOCK,{type:'Feature',properties:{vibe:saved.vibe,weight:1,mine:true},geometry:{type:'Point',coordinates:saved.cell}}]:MOCK
-  })
+  const [features,setFeatures]=useState([])
 
   const refreshVibes=()=>{
     fetch(API_URL+'/api/vibes')
@@ -158,7 +155,7 @@ function App(){
 
   useEffect(()=>{
     refreshVibes()
-    const timer=setInterval(refreshVibes,10000)
+    const timer=setInterval(refreshVibes,3000)
     return()=>clearInterval(timer)
   },[])
 
@@ -184,7 +181,8 @@ function App(){
 
     map.on('load',()=>{
       makeMapVibey(map)
-      map.addSource('vibes',{type:'geojson',data:featureCollection(features)})
+      map.addSource('vibes',{type:'geojson',data:featureCollection([])})
+      refreshVibes()
       VIBES.forEach(v=>map.addLayer({
         id:'heat-'+v.id,type:'heatmap',source:'vibes',
         filter:['==',['get','vibe'],v.id],

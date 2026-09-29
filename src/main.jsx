@@ -92,6 +92,13 @@ function snapToGrid([lng, lat], cellMeters = 300) {
 }
 
 const ACTIVE_VIBE_KEY='vibemap-active-vibe'
+const DEVICE_KEY='vibemap-device-id'
+const API_URL=import.meta.env.VITE_API_URL||'http://localhost:8787'
+function getDeviceId(){
+  let id=localStorage.getItem(DEVICE_KEY)
+  if(!id){ id=crypto.randomUUID(); localStorage.setItem(DEVICE_KEY,id) }
+  return id
+}
 const VIBE_TTL_MS=2*60*60*1000
 
 function loadActiveVibe(){
@@ -193,6 +200,11 @@ function App(){
     const previous=activeVibe
     const next={vibe:vibe.id,cell:publicCell,updatedAt:Date.now()}
     localStorage.setItem(ACTIVE_VIBE_KEY,JSON.stringify(next))
+    fetch(API_URL+'/api/vibes/'+getDeviceId(),{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({vibe:vibe.id,lng:publicCell[0],lat:publicCell[1]})
+    }).catch(()=>{})
     setActiveVibe(next)
     setSelected(vibe.id)
 

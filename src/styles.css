@@ -7,3 +7,5 @@
 .topbar .sub{margin-top:4px;font-size:12px;opacity:.58}
 .map-shell{height:calc(100dvh - 70px)}
 @media(max-width:520px){.topbar{padding:12px 16px 10px}.brand{font-size:18px!important}.map-shell{height:calc(100dvh - 64px)}}
+
+.brand-logo{display:block;height:32px;width:auto}

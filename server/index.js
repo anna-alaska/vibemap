@@ -7,6 +7,17 @@ const {Pool}=pg
 const app=express()
 const pool=new Pool({host:process.env.DB_HOST,port:Number(process.env.DB_PORT||5432),user:process.env.DB_USER,password:process.env.DB_PASSWORD,database:process.env.DB_NAME,ssl:process.env.DB_SSL==='true'?{rejectUnauthorized:false}:false})
 const VALID=new Set(['joy','move','chill','blue','chaos','alone'])
+const schema=`
+CREATE TABLE IF NOT EXISTS vibe_marks (
+ device_id text PRIMARY KEY,
+ vibe text NOT NULL CHECK (vibe IN ('joy','move','chill','blue','chaos','alone')),
+ cell_lng double precision NOT NULL,
+ cell_lat double precision NOT NULL,
+ updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS vibe_marks_updated_at_idx ON vibe_marks(updated_at);
+`
+await pool.query(schema)
 app.use(cors()); app.use(express.json())
 app.get('/api/health',async(_req,res)=>{try{await pool.query('select 1');res.json({ok:true})}catch{res.status(500).json({ok:false,error:'database unavailable'})}})
 app.get('/api/vibes',async(_req,res)=>{try{

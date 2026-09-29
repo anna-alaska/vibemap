@@ -140,6 +140,28 @@ function App(){
     return saved?[...MOCK,{type:'Feature',properties:{vibe:saved.vibe,weight:1,mine:true},geometry:{type:'Point',coordinates:saved.cell}}]:MOCK
   })
 
+  const refreshVibes=()=>{
+    fetch(API_URL+'/api/vibes')
+      .then(r=>r.ok?r.json():Promise.reject())
+      .then(data=>{
+        const remote=(data.cells||[]).map((x,i)=>({
+          type:'Feature',
+          id:'remote-'+i,
+          properties:{vibe:x.vibe,weight:Number(x.weight)||1},
+          geometry:{type:'Point',coordinates:[Number(x.lng),Number(x.lat)]}
+        }))
+        setFeatures(remote)
+        setCount(data.total||0)
+      })
+      .catch(()=>{})
+  }
+
+  useEffect(()=>{
+    refreshVibes()
+    const timer=setInterval(refreshVibes,10000)
+    return()=>clearInterval(timer)
+  },[])
+
   const dominant=useMemo(()=>{
     const counts={}
     features.forEach(f=>counts[f.properties.vibe]=(counts[f.properties.vibe]||0)+1)
@@ -167,7 +189,7 @@ function App(){
         id:'heat-'+v.id,type:'heatmap',source:'vibes',
         filter:['==',['get','vibe'],v.id],
         paint:{
-          'heatmap-weight':1,
+          'heatmap-weight':['interpolate',['linear'],['get','weight'],1,1,10,2.4],
           'heatmap-intensity':['interpolate',['linear'],['zoom'],10,1.35,16,2.8],
           'heatmap-radius':['interpolate',['linear'],['zoom'],10,36,16,68],
           'heatmap-opacity':['interpolate',['linear'],['zoom'],10,.96,17,.78],

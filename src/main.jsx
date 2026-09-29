@@ -45,8 +45,25 @@ function makeMapVibey(map) {
     if (layer.type === 'fill') {
       if (id.includes('water')) map.setPaintProperty(layer.id, 'fill-color', '#15171b')
       else if (id.includes('building')) map.setPaintProperty(layer.id, 'fill-color', '#202126')
-      else if (id.includes('park') || id.includes('landcover') || id.includes('landuse') || id.includes('wood')) {
+      else if (
+        id.includes('park') ||
+        id.includes('landcover') ||
+        id.includes('landuse') ||
+        id.includes('wood') ||
+        id.includes('grass') ||
+        id.includes('forest') ||
+        id.includes('vegetation') ||
+        id.includes('scrub') ||
+        id.includes('farmland')
+      ) {
+        // Keep every vegetation/green-area layer in the same dark monochrome palette.
         map.setPaintProperty(layer.id, 'fill-color', '#111216')
+        if (map.getPaintProperty(layer.id, 'fill-pattern') !== undefined) {
+          map.setPaintProperty(layer.id, 'fill-pattern', null)
+        }
+        if (map.getPaintProperty(layer.id, 'fill-opacity') !== undefined) {
+          map.setPaintProperty(layer.id, 'fill-opacity', 1)
+        }
       }
     }
 

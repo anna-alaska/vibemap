@@ -93,7 +93,7 @@ function snapToGrid([lng, lat], cellMeters = 300) {
 
 const ACTIVE_VIBE_KEY='vibemap-active-vibe'
 const DEVICE_KEY='vibemap-device-id'
-const API_URL=import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:8787`
+const API_URL=import.meta.env.VITE_API_URL || 'http://95.53.14.84:8787'
 function getDeviceId(){
   let id=localStorage.getItem(DEVICE_KEY)
   if(!id){ id=crypto.randomUUID(); localStorage.setItem(DEVICE_KEY,id) }

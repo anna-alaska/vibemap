@@ -269,7 +269,7 @@ function App(){
   }
 
   return <main className="app">
-    <section className="topbar"><div><img className="brand-logo" src="/vibemap-logo.svg" alt="VibeMap"/><p className="sub">{status} · {count} отметок за 2 часа</p></div></section>
+    <section className="topbar"><div><h1 className="brand">вайбмэп</h1><p className="sub">{status} · {count} отметок за 2 часа</p></div></section>
     <section className="map-shell">
       <div ref={mapEl} className="map"/>
       <button className="locate" onClick={()=>{const p=userLocation.current;if(p) mapRef.current?.easeTo({center:p,zoom:15,duration:700});else navigator.geolocation?.getCurrentPosition(pos=>{const p=[pos.coords.longitude,pos.coords.latitude];userLocation.current=p;mapRef.current?.easeTo({center:p,zoom:15,duration:700})})}} aria-label="Найти меня">◎</button>

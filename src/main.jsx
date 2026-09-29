@@ -99,6 +99,20 @@ function getDeviceId(){
   if(!id){ id=crypto.randomUUID(); localStorage.setItem(DEVICE_KEY,id) }
   return id
 }
+
+// Stable privacy-preserving offset inside the public grid cell.
+// The same browser gets the same spot, so the cloud does not jump on refresh.
+function offsetInsideCell(cell, deviceId, cellMeters=300){
+  let hash=2166136261
+  for(const ch of deviceId){ hash^=ch.charCodeAt(0); hash=Math.imul(hash,16777619) }
+  const rand=n=>{ const x=Math.sin((hash+n)*12.9898)*43758.5453; return x-Math.floor(x) }
+  const angle=rand(1)*Math.PI*2
+  const radius=Math.sqrt(rand(2))*cellMeters*.36
+  const lat=cell[1]
+  const dLat=(Math.sin(angle)*radius)/111320
+  const dLng=(Math.cos(angle)*radius)/(111320*Math.cos(lat*Math.PI/180))
+  return [cell[0]+dLng,cell[1]+dLat]
+}
 const VIBE_TTL_MS=2*60*60*1000
 
 function loadActiveVibe(){
@@ -197,13 +211,14 @@ function App(){
 
   const addVibeToGrid=(vibe, exactLocation)=>{
     const publicCell=snapToGrid(exactLocation,300)
+    const publicPoint=offsetInsideCell(publicCell,getDeviceId(),300)
     const previous=activeVibe
-    const next={vibe:vibe.id,cell:publicCell,updatedAt:Date.now()}
+    const next={vibe:vibe.id,cell:publicPoint,updatedAt:Date.now()}
     localStorage.setItem(ACTIVE_VIBE_KEY,JSON.stringify(next))
     fetch(API_URL+'/api/vibes/'+getDeviceId(),{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({vibe:vibe.id,lng:publicCell[0],lat:publicCell[1]})
+      body:JSON.stringify({vibe:vibe.id,lng:publicPoint[0],lat:publicPoint[1]})
     }).catch(()=>{})
     setActiveVibe(next)
     setSelected(vibe.id)
@@ -214,7 +229,7 @@ function App(){
       {
         type:'Feature',
         properties:{vibe:vibe.id,weight:1,mine:true},
-        geometry:{type:'Point',coordinates:publicCell}
+        geometry:{type:'Point',coordinates:publicPoint}
       }
     ])
     if(!previous) setCount(c=>c+1)
